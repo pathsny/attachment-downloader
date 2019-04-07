@@ -53,7 +53,7 @@ function main(auth, gmailInstance) {
       } else {
         return askForMail()
           .then((mailId) => {
-            return getListOfMailIdByFromId(auth, mailId, 50);
+            return getListOfMailIdByFromId(auth, mailId, 100);
           });
       }
     })
@@ -145,17 +145,19 @@ function saveFile(fileName, content) {
 }
 
 function pluckAttachment(mails) {
-  return _.compact(_.map(mails, (m) => {
+  return _.flatMap(mails, (m) => {
     if (!m.data) {
       return undefined;
     }
-    const attachment = {
-      mailId: m.data.id,
-      name: m.data.payload.parts.length > 1 ? m.data.payload.parts[1].filename : undefined,
-      id: m.data.payload.parts.length > 1 ? m.data.payload.parts[1].body.attachmentId: undefined
-    };
-    return m.data.payload.parts.length > 1 ? attachment : undefined;
-  }));
+    return _.map(
+      _.drop(m.data.payload.parts, 1),
+      (part) => ({
+        mailId: m.data.id,
+        name: part.filename,
+        id: part.body.attachmentId
+      })
+    );
+  });
 }
 
 function askForLabel(labels) {
